@@ -2,11 +2,7 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "./_components/app-sidebar";
 import { SiteHeader } from "./_components/site-header";
 
-export default function Layout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider
       style={
@@ -21,7 +17,9 @@ export default function Layout({
       <SidebarInset>
         <SiteHeader />
 
-        <div className="flex flex-1 flex-col px-4 lg:px-6">{children}</div>
+        <div className="flex flex-1 flex-col px-4 overflow-hidden lg:px-6">
+          {children}
+        </div>
       </SidebarInset>
     </SidebarProvider>
   );

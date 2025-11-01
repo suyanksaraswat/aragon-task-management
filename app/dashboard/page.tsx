@@ -1,4 +1,4 @@
-import { KanbanBoardComponent } from "@/components/common/kanban-board";
+import { KanbanBoard } from "@/components/common/kanban-board";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -9,8 +9,8 @@ export const metadata: Metadata = {
 
 export default function Page() {
   return (
-    <div className="py-4">
-      <KanbanBoardComponent />
+    <div className="py-4 overflow-auto">
+      <KanbanBoard />
     </div>
   );
 }
