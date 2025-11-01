@@ -28,9 +28,16 @@ model User {
   @@index([email])
 }
 
+enum TaskStatus {
+  todo
+  in_progress
+  done
+}
+
 model Task {
-  id        String   @id @default(cuid())
+  id        String     @id @default(cuid())
   title     String
+  status    TaskStatus @default(todo)
   ownerId   String
 
   createdAt DateTime @default(now())
@@ -39,4 +46,5 @@ model Task {
   owner     User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 
   @@index([ownerId])
+  @@index([status])
 }

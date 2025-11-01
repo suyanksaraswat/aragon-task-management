@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 
 import { BoardColumn, BoardContainer } from "./board-column";
@@ -23,6 +23,36 @@ import { type Task, TaskCard } from "./task-card";
 import type { Column } from "./board-column";
 import { hasDraggableData } from "./hasDraggableData";
 import { coordinateGetter } from "./multipleContainersKeyboardPreset";
+import { trpc } from "@/app/_trpc/client";
+import { EditTaskDialog, DeleteTaskDialog, CreateTaskDialog } from "./task-dialogs";
+import { useTaskContext } from "@/app/dashboard/_components/task-context";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
+
+// Helper functions to map between database status and columnId
+function statusToColumnId(status: "todo" | "in_progress" | "done"): ColumnId {
+  switch (status) {
+    case "todo":
+      return "todo";
+    case "in_progress":
+      return "in-progress";
+    case "done":
+      return "done";
+    default:
+      return "todo";
+  }
+}
+
+function columnIdToStatus(columnId: ColumnId): "todo" | "in_progress" | "done" {
+  switch (columnId) {
+    case "todo":
+      return "todo";
+    case "in-progress":
+      return "in_progress";
+    case "done":
+      return "done";
+  }
+}
 
 const defaultCols = [
   {
@@ -41,87 +71,110 @@ const defaultCols = [
 
 export type ColumnId = (typeof defaultCols)[number]["id"];
 
-const initialTasks: Task[] = [
-  {
-    id: "task1",
-    columnId: "done",
-    content: "Project initiation and planning",
-  },
-  {
-    id: "task2",
-    columnId: "done",
-    content: "Gather requirements from stakeholders",
-  },
-  {
-    id: "task3",
-    columnId: "done",
-    content: "Create wireframes and mockups",
-  },
-  {
-    id: "task4",
-    columnId: "in-progress",
-    content: "Develop homepage layout",
-  },
-  {
-    id: "task5",
-    columnId: "in-progress",
-    content: "Design color scheme and typography",
-  },
-  {
-    id: "task6",
-    columnId: "todo",
-    content: "Implement user authentication",
-  },
-  {
-    id: "task7",
-    columnId: "todo",
-    content: "Build contact us page",
-  },
-  {
-    id: "task8",
-    columnId: "todo",
-    content: "Create product catalog",
-  },
-  {
-    id: "task9",
-    columnId: "todo",
-    content: "Develop about us page",
-  },
-  {
-    id: "task10",
-    columnId: "todo",
-    content: "Optimize website for mobile devices",
-  },
-  {
-    id: "task11",
-    columnId: "todo",
-    content: "Integrate payment gateway",
-  },
-  {
-    id: "task12",
-    columnId: "todo",
-    content: "Perform testing and bug fixing",
-  },
-  {
-    id: "task13",
-    columnId: "todo",
-    content: "Launch website and deploy to server",
-  },
-];
 export function KanbanBoard() {
   const [columns, setColumns] = useState<Column[]>(defaultCols);
   const pickedUpTaskColumn = useRef<ColumnId | null>(null);
   const columnsId = useMemo(() => columns.map((col) => col.id), [columns]);
 
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
+  // Fetch tasks from tRPC
+  const { data: dbTasks, isLoading, refetch } = trpc.tasks.getKanbanTasks.useQuery();
+  const updateTaskMutation = trpc.tasks.update.useMutation({
+    onSuccess: () => {
+      refetch();
+    },
+  });
+  const deleteTaskMutation = trpc.tasks.delete.useMutation({
+    onSuccess: () => {
+      refetch();
+    },
+  });
+  const createTaskMutation = trpc.tasks.create.useMutation({
+    onSuccess: () => {
+      refetch();
+    },
+  });
+
+  // Dialog states
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  
+  // Get create dialog state from context
+  const { isCreateDialogOpen, closeCreateDialog, openCreateDialog } = useTaskContext();
+
+  // Map database tasks to kanban Task format
+  const mappedTasks = useMemo(() => {
+    if (!dbTasks) return [];
+    return dbTasks.map((dbTask) => ({
+      id: dbTask.id,
+      columnId: statusToColumnId(dbTask.status as "todo" | "in_progress" | "done"),
+      content: dbTask.title,
+    }));
+  }, [dbTasks]);
+
+  // Use state for tasks to enable optimistic updates during drag
+  const [tasks, setTasks] = useState<Task[]>([]);
+
+  // Sync tasks with fetched data
+  useEffect(() => {
+    if (dbTasks) {
+      setTasks(mappedTasks);
+    }
+  }, [dbTasks, mappedTasks]);
 
   const [activeColumn, setActiveColumn] = useState<Column | null>(null);
 
   const [activeTask, setActiveTask] = useState<Task | null>(null);
 
+  // Handlers for edit and delete
+  const handleEditTask = (task: Task) => {
+    setSelectedTask(task);
+    setEditDialogOpen(true);
+  };
+
+  const handleDeleteTask = (taskId: string) => {
+    const task = tasks.find((t) => t.id === taskId);
+    if (task) {
+      setSelectedTask(task);
+      setDeleteDialogOpen(true);
+    }
+  };
+
+  const handleSaveTask = (
+    id: string,
+    title: string,
+    status: "todo" | "in_progress" | "done"
+  ) => {
+    updateTaskMutation.mutate({
+      id,
+      title,
+      status,
+    });
+  };
+
+  const handleConfirmDelete = (id: string) => {
+    deleteTaskMutation.mutate({ id });
+  };
+
+  const handleCreateTask = (title: string, status: "todo" | "in_progress" | "done") => {
+    createTaskMutation.mutate({
+      title,
+      status,
+    });
+  };
+
   const sensors = useSensors(
-    useSensor(MouseSensor),
-    useSensor(TouchSensor),
+    useSensor(MouseSensor, {
+      activationConstraint: {
+        distance: 8, // Require 8px of movement before drag starts
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 250, // Require 250ms hold before drag starts on touch
+        tolerance: 5,
+      },
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter: coordinateGetter,
     })
@@ -233,6 +286,43 @@ export function KanbanBoard() {
     },
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-muted-foreground">Loading tasks...</div>
+      </div>
+    );
+  }
+
+  // Show empty state when there are no tasks
+  if (!isLoading && tasks.length === 0) {
+    return (
+      <>
+        <div className="flex flex-col items-center justify-center h-[calc(100vh-12rem)] gap-6">
+          <div className="text-center space-y-4">
+            <h2 className="text-2xl font-semibold text-foreground">
+              No tasks yet
+            </h2>
+            <p className="text-muted-foreground max-w-md">
+              Start by adding your first task to get organized and stay productive.
+            </p>
+          </div>
+          <Button onClick={openCreateDialog} size="lg" className="gap-2">
+            <Plus className="h-5 w-5" />
+            Create Your First Task
+          </Button>
+        </div>
+
+        {/* Create Task Dialog */}
+        <CreateTaskDialog
+          open={isCreateDialogOpen}
+          onOpenChange={closeCreateDialog}
+          onCreate={handleCreateTask}
+        />
+      </>
+    );
+  }
+
   return (
     <DndContext
       accessibility={{
@@ -250,6 +340,8 @@ export function KanbanBoard() {
               key={col.id}
               column={col}
               tasks={tasks.filter((task) => task.columnId === col.id)}
+              onEdit={handleEditTask}
+              onDelete={handleDeleteTask}
             />
           ))}
         </SortableContext>
@@ -272,6 +364,29 @@ export function KanbanBoard() {
           </DragOverlay>,
           document.body
         )}
+
+      {/* Edit Task Dialog */}
+      <EditTaskDialog
+        task={selectedTask}
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        onSave={handleSaveTask}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteTaskDialog
+        task={selectedTask}
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onDelete={handleConfirmDelete}
+      />
+
+      {/* Create Task Dialog */}
+      <CreateTaskDialog
+        open={isCreateDialogOpen}
+        onOpenChange={closeCreateDialog}
+        onCreate={handleCreateTask}
+      />
     </DndContext>
   );
 
@@ -348,8 +463,16 @@ export function KanbanBoard() {
           overTask &&
           activeTask.columnId !== overTask.columnId
         ) {
-          activeTask.columnId = overTask.columnId;
-          return arrayMove(tasks, activeIndex, overIndex - 1);
+          // Update status in database
+          const newStatus = columnIdToStatus(overTask.columnId);
+          updateTaskMutation.mutate({
+            id: activeId as string,
+            status: newStatus,
+          });
+          // Create new task with updated columnId
+          const updatedTasks = [...tasks];
+          updatedTasks[activeIndex] = { ...activeTask, columnId: overTask.columnId };
+          return arrayMove(updatedTasks, activeIndex, overIndex - 1);
         }
 
         return arrayMove(tasks, activeIndex, overIndex);
@@ -363,9 +486,18 @@ export function KanbanBoard() {
       setTasks((tasks) => {
         const activeIndex = tasks.findIndex((t) => t.id === activeId);
         const activeTask = tasks[activeIndex];
-        if (activeTask) {
-          activeTask.columnId = overId as ColumnId;
-          return arrayMove(tasks, activeIndex, activeIndex);
+        const newColumnId = overId as ColumnId;
+        if (activeTask && activeTask.columnId !== newColumnId) {
+          // Update status in database
+          const newStatus = columnIdToStatus(newColumnId);
+          updateTaskMutation.mutate({
+            id: activeId as string,
+            status: newStatus,
+          });
+          // Create new task with updated columnId
+          const updatedTasks = [...tasks];
+          updatedTasks[activeIndex] = { ...activeTask, columnId: newColumnId };
+          return arrayMove(updatedTasks, activeIndex, activeIndex);
         }
         return tasks;
       });

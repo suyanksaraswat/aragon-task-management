@@ -2,11 +2,14 @@ import { protectedProcedure, router } from "../trpc";
 import prisma from "@/lib/prisma";
 import { z } from "zod";
 
+const TaskStatusSchema = z.enum(["todo", "in_progress", "done"]);
+
 export const taskRouter = router({
   create: protectedProcedure
     .input(
       z.object({
         title: z.string().min(1, "Title is required"),
+        status: TaskStatusSchema.default("todo").optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -20,6 +23,7 @@ export const taskRouter = router({
       const task = await prisma.task.create({
         data: {
           title: input.title,
+          status: input.status ?? "todo",
           ownerId: userId,
         },
       });
@@ -111,11 +115,32 @@ export const taskRouter = router({
       }
     }),
 
+  getKanbanTasks: protectedProcedure.query(async ({ ctx }) => {
+    try {
+      const userId = ctx.auth.userId;
+
+      if (!userId) {
+        throw new Error("User ID is required");
+      }
+
+      const tasks = await prisma.task.findMany({
+        where: { ownerId: userId },
+        orderBy: { createdAt: "desc" },
+      });
+
+      return tasks;
+    } catch (error) {
+      console.error("Error fetching kanban tasks: ", error);
+      throw new Error("Failed to fetch tasks");
+    }
+  }),
+
   update: protectedProcedure
     .input(
       z.object({
         id: z.string(),
         title: z.string().min(1).optional(),
+        status: TaskStatusSchema.optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {

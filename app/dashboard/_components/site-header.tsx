@@ -5,9 +5,11 @@ import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Plus } from "lucide-react";
 import { usePathname } from "next/navigation";
+import { useTaskContext } from "./task-context";
 
 export function SiteHeader() {
   const pathname = usePathname();
+  const { openCreateDialog } = useTaskContext();
 
   const siteHeader = () => {
     switch (pathname) {
@@ -25,7 +27,7 @@ export function SiteHeader() {
       case "/dashboard":
         return (
           <div>
-            <Button>
+            <Button onClick={openCreateDialog}>
               <Plus />
               Create Task
             </Button>
