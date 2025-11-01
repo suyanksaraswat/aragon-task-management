@@ -1,7 +1,7 @@
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "./_components/app-sidebar";
 import { SiteHeader } from "./_components/site-header";
-import { TaskProvider } from "./_components/task-context";
+import { TaskProvider } from "@/contexts/task-context";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (

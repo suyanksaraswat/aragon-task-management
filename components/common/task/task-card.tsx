@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { cva } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 import { Trash2, Edit } from "lucide-react";
-import { ColumnId } from ".";
+import { ColumnId } from "@/components/common/kanban-board";
 
 export interface Task {
   id: UniqueIdentifier;
@@ -145,3 +145,4 @@ export function TaskCard({ task, isOverlay, onEdit, onDelete }: TaskCardProps) {
     </Card>
   );
 }
+

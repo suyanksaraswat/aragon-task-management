@@ -2,11 +2,8 @@ import { SortableContext, useSortable } from "@dnd-kit/sortable";
 import { useDndContext, type UniqueIdentifier } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import { useMemo } from "react";
-import { Task, TaskCard } from "./task-card";
+import { Task, TaskCard } from "@/components/common/task";
 import { cva } from "class-variance-authority";
-import { GripVertical } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { ScrollBar } from "@/components/ui/scroll-area";
 import { ScrollArea } from "@radix-ui/react-scroll-area";
 
@@ -30,7 +27,13 @@ interface BoardColumnProps {
   onDelete?: (taskId: string) => void;
 }
 
-export function BoardColumn({ column, tasks, isOverlay, onEdit, onDelete }: BoardColumnProps) {
+export function BoardColumn({
+  column,
+  tasks,
+  isOverlay,
+  onEdit,
+  onDelete,
+}: BoardColumnProps) {
   const tasksIds = useMemo(() => {
     return tasks.map((task) => task.id);
   }, [tasks]);
@@ -60,16 +63,18 @@ export function BoardColumn({ column, tasks, isOverlay, onEdit, onDelete }: Boar
 
   return (
     <div ref={setNodeRef} style={style} className="w-[350px]">
-      <div className="px-4 text-sm text-muted-foreground mb-2">{column.title}</div>
+      <div className="px-4 text-sm text-muted-foreground mb-2">
+        {column.title}
+      </div>
 
       <ScrollArea className="h-[calc(100vh-12rem)]">
         <div className="flex flex-grow flex-col gap-2 p-2 min-h-full">
           {tasks.length > 0 ? (
             <SortableContext items={tasksIds}>
               {tasks.map((task) => (
-                <TaskCard 
-                  key={task.id} 
-                  task={task} 
+                <TaskCard
+                  key={task.id}
+                  task={task}
                   onEdit={onEdit}
                   onDelete={onDelete}
                 />

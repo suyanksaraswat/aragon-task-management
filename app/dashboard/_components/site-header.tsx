@@ -5,7 +5,7 @@ import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Plus } from "lucide-react";
 import { usePathname } from "next/navigation";
-import { useTaskContext } from "./task-context";
+import { useTaskContext } from "@/contexts/task-context";
 
 export function SiteHeader() {
   const pathname = usePathname();

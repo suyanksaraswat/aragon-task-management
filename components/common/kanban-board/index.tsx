@@ -19,13 +19,13 @@ import {
   MouseSensor,
 } from "@dnd-kit/core";
 import { SortableContext, arrayMove } from "@dnd-kit/sortable";
-import { type Task, TaskCard } from "./task-card";
+import { type Task, TaskCard } from "@/components/common/task";
 import type { Column } from "./board-column";
 import { hasDraggableData } from "./hasDraggableData";
 import { coordinateGetter } from "./multipleContainersKeyboardPreset";
 import { trpc } from "@/app/_trpc/client";
-import { EditTaskDialog, DeleteTaskDialog, CreateTaskDialog } from "./task-dialogs";
-import { useTaskContext } from "@/app/dashboard/_components/task-context";
+import { EditTaskDialog, DeleteTaskDialog, CreateTaskDialog } from "@/components/common/task";
+import { useTaskContext } from "@/contexts/task-context";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 
