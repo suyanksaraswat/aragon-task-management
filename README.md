@@ -230,12 +230,18 @@ Create a `.env` file in the root directory with the following variables:
 # Generate with: openssl rand -base64 32
 NEXTAUTH_SECRET=your-secret-key-here
 
+# NextAuth URL - Canonical URL of your site (required for production)
+# For local development: http://localhost:3000
+# For production: https://yourdomain.com
+NEXTAUTH_URL=http://localhost:3000
+
 # Database
 DATABASE_URL="postgresql://user:password@localhost:5432/aragon_task_management?schema=public"
 ```
 
-### Generating NEXTAUTH_SECRET
+### Environment Variable Details
 
+#### NEXTAUTH_SECRET
 1. **Generate a secure secret** using OpenSSL:
    ```bash
    openssl rand -base64 32
@@ -244,6 +250,15 @@ DATABASE_URL="postgresql://user:password@localhost:5432/aragon_task_management?s
 2. **Copy the generated string** and add it to your `.env` file as `NEXTAUTH_SECRET`
 
 3. **Important**: Never commit your `.env` file to version control. The secret should be kept secure and different for each environment (development, staging, production).
+
+#### NEXTAUTH_URL
+- **Local Development**: Set to `http://localhost:3000` (or your local port)
+- **Production**: Set to your production domain (e.g., `https://yourdomain.com`)
+- **Optional**: For local development, NextAuth can usually auto-detect the URL, but it's recommended to set it explicitly
+- **Required for Production**: Must be set to ensure correct redirect URLs and callbacks
+
+#### Vercel Deployment
+If deploying to Vercel, `NEXTAUTH_URL` is automatically inferred, but you should still set `NEXTAUTH_SECRET` explicitly.
 
 ### Database URL Format
 
