@@ -11,13 +11,10 @@ const isAuthRoute = (pathname: string) => {
 };
 
 export async function middleware(req: NextRequest) {
-  // Get the secret from environment variables
   const secret = process.env.NEXTAUTH_SECRET;
   
   if (!secret) {
     console.error("NEXTAUTH_SECRET is not set in environment variables");
-    // If secret is missing, skip auth check and allow request to proceed
-    // This is a fallback - ensure NEXTAUTH_SECRET is set in production
     return NextResponse.next();
   }
 
