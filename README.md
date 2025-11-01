@@ -1,69 +1,427 @@
-<p align="center">
-  <a href="https://clerk.com?utm_source=github&utm_medium=clerk_docs" target="_blank" rel="noopener noreferrer">
-    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="./public/light-logo.png">
-      <img alt="Clerk Logo for light background" src="./public/dark-logo.png" height="64">
-    </picture>
-  </a>
-  <br />
-</p>
-<div align="center">
-  <h1>
-    Clerk, Next.js App Router, tRPC, Prisma Demo
-  </h1>
-  <a href="https://www.npmjs.com/package/@clerk/clerk-js">
-    <img alt="Downloads" src="https://img.shields.io/npm/dm/@clerk/clerk-js" />
-  </a>
-  <a href="https://discord.com/invite/b5rXHjAg7A">
-    <img alt="Discord" src="https://img.shields.io/discord/856971667393609759?color=7389D8&label&logo=discord&logoColor=ffffff" />
-  </a>
-  <a href="https://twitter.com/clerkdev">
-    <img alt="Twitter" src="https://img.shields.io/twitter/url.svg?label=%40clerkdev&style=social&url=https%3A%2F%2Ftwitter.com%2Fclerkdev" />
-  </a>
-  <br />
-  <br />
-  <img alt="Clerk Hero Image" src="./public/hero.png">
-</div>
+# Aragon Task Management
 
-## Introduction
+A modern, full-stack task management application built with Next.js 15, featuring real-time task creation, management, and a beautiful user interface with dark mode support.
 
-Clerk is a developer-first authentication and user management solution. It provides pre-built React components and hooks for sign-in, sign-up, user profile, and organization management. Clerk is designed to be easy to use and customize, and can be dropped into any React or Next.js application.
+## 📋 Table of Contents
 
-This repository demonstrates how to use Clerk to create a tRPC context that uses Clerk's authentication context, so that you can use Clerk's authentication state in your tRPC procedures. For more information, see the [guide in the Clerk Docs](https://clerk.com/docs/references/nextjs/trpc).
+- [Overview](#overview)
+- [Features](#features)
+- [Tech Stack](#tech-stack)
+- [Project Structure](#project-structure)
+- [Architecture](#architecture)
+- [Getting Started](#getting-started)
+- [Environment Variables](#environment-variables)
+- [Database Setup](#database-setup)
+- [Available Scripts](#available-scripts)
+- [API Documentation](#api-documentation)
 
-## Deploy
+## 🎯 Overview
 
-Easily deploy the template to Vercel with the button below. You will need to set the required environment variables in the Vercel dashboard.
+Aragon Task Management is a task management application that allows users to create and manage their tasks efficiently. The application features:
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fclerk%2Fclerk-nextjs-trpc-prisma&env=NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,CLERK_SECRET_KEY&envDescription=Clerk%20API%20keys&envLink=https%3A%2F%2Fclerk.com%2Fdocs%2Freferences%2Fnextjs%2Ftrpc&redirect-url=https%3A%2F%2Fclerk.com%2Fdocs%2Freferences%2Fnextjs%2Ftrpc)
+- **User Authentication**: Secure authentication using Clerk
+- **Task Management**: Full CRUD operations for tasks
+- **Modern UI**: Built with shadcn/ui components and Tailwind CSS
+- **Dark Mode**: Theme switching with smooth transitions
+- **Type Safety**: End-to-end type safety with TypeScript and tRPC
+- **Real-time Updates**: Optimistic updates with React Query
 
-## Running the template
+## ✨ Features
 
-```bash
-git clone https://github.com/clerk/clerk-nextjs-trpc-prisma
+### Implemented Features
+
+- ✅ User authentication with Clerk
+- ✅ Task creation with title field
+- ✅ Task listing with pagination
+- ✅ Task retrieval by ID
+- ✅ Task update functionality
+- ✅ Task deletion
+- ✅ Dark/Light mode toggle
+- ✅ Responsive sidebar navigation
+- ✅ Protected routes with middleware
+- ✅ Optimistic UI updates
+
+### Future Enhancements
+
+- Kanban board view (components already created)
+- Task filtering and search
+- Task categories/tags
+- Due dates and reminders
+- Task priority levels
+
+## 🛠 Tech Stack
+
+### Frontend
+- **Next.js 15.2.3** - React framework with App Router
+- **React 19** - UI library
+- **TypeScript** - Type safety
+- **Tailwind CSS 4.0** - Styling
+- **shadcn/ui** - UI component library
+- **Radix UI** - Accessible primitives
+- **Lucide React** - Icons
+- **next-themes** - Theme management
+
+### Backend
+- **tRPC** - End-to-end typesafe APIs
+- **Prisma** - ORM for database management
+- **PostgreSQL** - Database
+- **Zod** - Schema validation
+
+### Authentication & State Management
+- **Clerk** - Authentication provider
+- **TanStack Query** - Server state management
+- **React Hook Form** - Form management
+
+### Development Tools
+- **Bun** - Package manager and runtime
+- **Prisma Studio** - Database GUI
+- **ESLint** - Code linting
+
+## 📁 Project Structure
+
+```
+aragon-task-management/
+├── app/
+│   ├── _trpc/              # tRPC client setup
+│   │   ├── client.ts       # tRPC client configuration
+│   │   └── Provider.tsx    # tRPC React Query provider
+│   ├── api/
+│   │   └── trpc/[trpc]/   # tRPC API route handler
+│   ├── dashboard/          # Dashboard pages
+│   │   ├── _components/    # Dashboard-specific components
+│   │   │   ├── app-sidebar.tsx
+│   │   │   ├── site-header.tsx
+│   │   │   └── nav-user.tsx
+│   │   ├── create-task/   # Create task page
+│   │   └── page.tsx        # Dashboard home
+│   ├── server/             # Server-side code
+│   │   ├── context.ts       # tRPC context
+│   │   ├── trpc.ts         # tRPC initialization
+│   │   └── routers/        # tRPC routers
+│   │       ├── app.ts      # Main router
+│   │       └── tasks.ts    # Task router
+│   ├── layout.tsx          # Root layout
+│   └── page.tsx            # Home page (redirects to dashboard)
+├── components/
+│   ├── common/             # Shared components
+│   │   └── kanban-board/   # Kanban board (for future use)
+│   ├── ui/                 # shadcn/ui components
+│   ├── mode-toggle.tsx     # Theme switcher
+│   └── theme-provider.tsx  # Theme provider
+├── lib/
+│   ├── prisma.ts           # Prisma client instance
+│   └── utils.ts            # Utility functions
+├── prisma/
+│   └── schema.prisma       # Database schema
+├── public/                 # Static assets
+└── middleware.ts           # Next.js middleware for auth
+
 ```
 
-To run the example locally, you need to:
+## 🏗 Architecture
 
-1. `npm install` the required dependencies. You may need to use `--force` to handle dependency issues from the React release candidate.
-1. `npm run dev` to launch the development server.
-1. Select the "Sign in" button in the top-right corner of the app's homepage.
+### Authentication Flow
 
-## Learn more
+1. User visits the application
+2. Middleware checks authentication status
+3. Unauthenticated users are redirected to Clerk sign-in
+4. Authenticated users access the dashboard
 
-To learn more about Clerk and Next.js, check out the following resources:
+### Data Flow
 
-- [Quickstart: Get started with Next.js and Clerk](https://clerk.com/docs/quickstarts/nextjs?utm_source=DevRel&utm_medium=docs&utm_campaign=templates&utm_content=clerk-nextjs-trpc)
+```
+Client Component
+    ↓
+tRPC Client (app/_trpc/client.ts)
+    ↓
+tRPC API Route (app/api/trpc/[trpc]/route.ts)
+    ↓
+tRPC Router (app/server/routers/tasks.ts)
+    ↓
+Prisma Client (lib/prisma.ts)
+    ↓
+PostgreSQL Database
+```
 
-- [Clerk Documentation](https://clerk.com/docs?utm_source=DevRel&utm_medium=docs&utm_campaign=templates&utm_content=clerk-nextjs-trpc-prisma)
-- [Next.js Documentation](https://nextjs.org/docs)
+### Key Implementation Details
 
-## Found an issue or want to leave feedback
+1. **Type Safety**: tRPC provides end-to-end type safety from database to frontend
+2. **Context**: tRPC context includes authenticated user ID from Clerk
+3. **Protected Procedures**: All task operations require authentication
+4. **User Isolation**: Tasks are scoped to the authenticated user via `ownerId`
+5. **Optimistic Updates**: React Query enables instant UI feedback
 
-Feel free to create a support thread on our [Discord](https://clerk.com/discord). Our support team will be happy to assist you in the `#support` channel.
+## 🚀 Getting Started
 
-## Connect with us
+### Prerequisites
 
-You can discuss ideas, ask questions, and meet others from the community in our [Discord](https://discord.com/invite/b5rXHjAg7A).
+- **Node.js** 18+ or **Bun** 1.0+
+- **PostgreSQL** database (local or cloud)
+- **Clerk** account (free tier available)
 
-If you prefer, you can also find support through our [Twitter](https://twitter.com/ClerkDev), or you can [email](mailto:support@clerk.dev) us!
+### Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd aragon-task-management
+   ```
+
+2. **Install dependencies**
+   ```bash
+   # Using Bun (recommended)
+   bun install
+   
+   # Or using npm
+   npm install
+   ```
+
+3. **Set up environment variables**
+   ```bash
+   cp .env.example .env
+   ```
+   
+   Then edit `.env` and add your environment variables (see [Environment Variables](#environment-variables))
+
+4. **Set up the database**
+   ```bash
+   # Generate Prisma Client
+   bunx prisma generate
+   
+   # Run database migrations
+   bunx prisma migrate dev
+   
+   # (Optional) Open Prisma Studio to view data
+   bunx prisma studio
+   ```
+
+5. **Start the development server**
+   ```bash
+   bun run dev
+   # or
+   npm run dev
+   ```
+
+6. **Open your browser**
+   Navigate to [http://localhost:3000](http://localhost:3000)
+
+## 🔐 Environment Variables
+
+Create a `.env` file in the root directory with the following variables:
+
+```env
+# Clerk Authentication
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
+CLERK_SECRET_KEY=sk_test_...
+
+# Database
+DATABASE_URL="postgresql://user:password@localhost:5432/aragon_task_management?schema=public"
+```
+
+### Getting Clerk Keys
+
+1. Sign up at [clerk.com](https://clerk.com)
+2. Create a new application
+3. Copy your publishable key and secret key from the dashboard
+4. Add them to your `.env` file
+
+### Database URL Format
+
+```
+postgresql://[USER]:[PASSWORD]@[HOST]:[PORT]/[DATABASE_NAME]?schema=public
+```
+
+For local PostgreSQL:
+```env
+DATABASE_URL="postgresql://postgres:password@localhost:5432/aragon_task_management?schema=public"
+```
+
+## 🗄 Database Setup
+
+### Using PostgreSQL
+
+1. **Install PostgreSQL** (if not installed)
+   - macOS: `brew install postgresql`
+   - Linux: `sudo apt-get install postgresql`
+   - Windows: Download from [postgresql.org](https://www.postgresql.org/download/)
+
+2. **Create a database**
+   ```sql
+   CREATE DATABASE aragon_task_management;
+   ```
+
+3. **Update DATABASE_URL** in your `.env` file
+
+4. **Run migrations**
+   ```bash
+   bunx prisma migrate dev --name init
+   ```
+
+### Database Schema
+
+The application uses a simple schema:
+
+```prisma
+model Task {
+  id        String   @id @default(cuid())
+  title     String
+  ownerId   String   // Clerk user ID
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([ownerId])
+}
+```
+
+## 📜 Available Scripts
+
+```bash
+# Development
+bun run dev          # Start development server
+bun run build         # Build for production
+bun run start         # Start production server
+bun run lint          # Run ESLint
+
+# Database
+bunx prisma generate          # Generate Prisma Client
+bunx prisma migrate dev       # Create and apply migration
+bunx prisma migrate deploy    # Apply migrations in production
+bunx prisma studio            # Open Prisma Studio GUI
+bunx prisma db push           # Push schema changes (dev only)
+```
+
+## 🔌 API Documentation
+
+### Task Operations
+
+All task operations are available through tRPC. The router is accessible at `/api/trpc`.
+
+#### Create Task
+```typescript
+trpc.tasks.create.useMutation({
+  title: string (required, min 1 character)
+})
+```
+
+#### Get All Tasks
+```typescript
+trpc.tasks.getAll.useQuery({
+  page?: number (default: 1),
+  limit?: number (default: 10, max: 100),
+  search?: string (optional)
+})
+```
+
+Returns:
+```typescript
+{
+  tasks: Task[],
+  pagination: {
+    page: number,
+    limit: number,
+    totalCount: number,
+    totalPages: number,
+    hasNextPage: boolean,
+    hasPrevPage: boolean
+  }
+}
+```
+
+#### Get Task by ID
+```typescript
+trpc.tasks.getById.useQuery({
+  id: string
+})
+```
+
+#### Update Task
+```typescript
+trpc.tasks.update.useMutation({
+  id: string,
+  title?: string (optional, min 1 character)
+})
+```
+
+#### Delete Task
+```typescript
+trpc.tasks.delete.useMutation({
+  id: string
+})
+```
+
+### Type Definitions
+
+```typescript
+type Task = {
+  id: string;
+  title: string;
+  ownerId: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+```
+
+## 🎨 UI Components
+
+The application uses [shadcn/ui](https://ui.shadcn.com) components:
+
+- **Sidebar** - Collapsible navigation sidebar
+- **Switch** - Theme toggle switch
+- **Button** - Various button variants
+- **Card** - Content containers
+- **Form** - Form components with validation
+- **Dialog** - Modal dialogs
+- And more...
+
+All components are fully customizable and accessible.
+
+## 🔒 Security
+
+- **Authentication**: All routes under `/dashboard` are protected
+- **User Isolation**: Tasks are scoped to the authenticated user
+- **Input Validation**: Zod schemas validate all inputs
+- **Type Safety**: TypeScript and tRPC ensure type safety
+- **Environment Variables**: Sensitive data stored in `.env`
+
+## 🚀 Deployment
+
+### Vercel (Recommended)
+
+1. Push your code to GitHub
+2. Import your repository in Vercel
+3. Add environment variables in Vercel dashboard
+4. Deploy!
+
+### Other Platforms
+
+The application can be deployed to any platform that supports Next.js:
+- Vercel (recommended)
+- Netlify
+- AWS
+- Railway
+- Render
+
+Make sure to:
+- Set all environment variables
+- Run `prisma migrate deploy` for database migrations
+- Use PostgreSQL database (not SQLite for production)
+
+## 📝 License
+
+This project is created as an assignment/project.
+
+## 👤 Author
+
+Created as part of an assignment demonstrating full-stack development with modern technologies.
+
+---
+
+## 🙏 Acknowledgments
+
+- [Next.js](https://nextjs.org/) - React framework
+- [tRPC](https://trpc.io/) - End-to-end typesafe APIs
+- [Clerk](https://clerk.com/) - Authentication
+- [Prisma](https://www.prisma.io/) - Database ORM
+- [shadcn/ui](https://ui.shadcn.com/) - UI components
+- [Tailwind CSS](https://tailwindcss.com/) - Styling
