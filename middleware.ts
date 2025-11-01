@@ -1,15 +1,47 @@
-import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { getToken } from "next-auth/jwt";
 
-// This Middleware does not protect any routes by default.
-// See https://clerk.com/docs/references/nextjs/clerk-middleware for more information about configuring your Middleware
+const isProtectedRoute = (pathname: string) => {
+  return pathname.startsWith("/dashboard");
+};
 
-const isProtectedRoute = createRouteMatcher([
-  "/dashboard(.*)", // Protects all routes under /dashboard
-]);
+const isAuthRoute = (pathname: string) => {
+  return pathname.startsWith("/login") || pathname.startsWith("/signup") || pathname.startsWith("/auth-error");
+};
 
-export default clerkMiddleware(async (auth, req) => {
-  if (isProtectedRoute(req)) await auth.protect();
-});
+export async function middleware(req: NextRequest) {
+  // Get the secret from environment variables
+  const secret = process.env.NEXTAUTH_SECRET;
+  
+  if (!secret) {
+    console.error("NEXTAUTH_SECRET is not set in environment variables");
+    // If secret is missing, skip auth check and allow request to proceed
+    // This is a fallback - ensure NEXTAUTH_SECRET is set in production
+    return NextResponse.next();
+  }
+
+  const token = await getToken({ 
+    req, 
+    secret,
+  });
+  
+  const pathname = req.nextUrl.pathname;
+
+  // If user is authenticated and tries to access auth routes, redirect to dashboard
+  if (token && isAuthRoute(pathname)) {
+    return NextResponse.redirect(new URL("/dashboard", req.url));
+  }
+
+  // If user is not authenticated and tries to access protected routes, redirect to login
+  if (!token && isProtectedRoute(pathname)) {
+    const loginUrl = new URL("/login", req.url);
+    loginUrl.searchParams.set("callbackUrl", pathname);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  return NextResponse.next();
+}
 
 export const config = {
   matcher: [

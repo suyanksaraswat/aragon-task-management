@@ -255,7 +255,8 @@ export function KanbanBoard() {
         </SortableContext>
       </BoardContainer>
 
-      {"document" in window &&
+      {typeof window !== "undefined" &&
+        typeof document !== "undefined" &&
         createPortal(
           <DragOverlay>
             {activeColumn && (

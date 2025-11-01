@@ -19,7 +19,7 @@ A modern, full-stack task management application built with Next.js 15, featurin
 
 Aragon Task Management is a task management application that allows users to create and manage their tasks efficiently. The application features:
 
-- **User Authentication**: Secure authentication using Clerk
+- **User Authentication**: Secure authentication with email and password using NextAuth.js
 - **Task Management**: Full CRUD operations for tasks
 - **Modern UI**: Built with shadcn/ui components and Tailwind CSS
 - **Dark Mode**: Theme switching with smooth transitions
@@ -30,7 +30,9 @@ Aragon Task Management is a task management application that allows users to cre
 
 ### Implemented Features
 
-- ✅ User authentication with Clerk
+- ✅ User authentication with email and password (NextAuth.js)
+- ✅ User registration (sign up)
+- ✅ User login
 - ✅ Task creation with title field
 - ✅ Task listing with pagination
 - ✅ Task retrieval by ID
@@ -68,7 +70,8 @@ Aragon Task Management is a task management application that allows users to cre
 - **Zod** - Schema validation
 
 ### Authentication & State Management
-- **Clerk** - Authentication provider
+- **NextAuth.js** - Authentication with email/password
+- **bcryptjs** - Password hashing
 - **TanStack Query** - Server state management
 - **React Hook Form** - Form management
 
@@ -86,7 +89,14 @@ aragon-task-management/
 │   │   ├── client.ts       # tRPC client configuration
 │   │   └── Provider.tsx    # tRPC React Query provider
 │   ├── api/
+│   │   ├── auth/          # Authentication routes
+│   │   │   ├── [...nextauth]/  # NextAuth API route
+│   │   │   ├── login/     # Login API route
+│   │   │   └── signup/    # Signup API route
 │   │   └── trpc/[trpc]/   # tRPC API route handler
+│   ├── login/             # Login page
+│   ├── signup/            # Signup page
+│   ├── auth-error/        # Auth error page
 │   ├── dashboard/          # Dashboard pages
 │   │   ├── _components/    # Dashboard-specific components
 │   │   │   ├── app-sidebar.tsx
@@ -106,11 +116,15 @@ aragon-task-management/
 │   ├── common/             # Shared components
 │   │   └── kanban-board/   # Kanban board (for future use)
 │   ├── ui/                 # shadcn/ui components
+│   ├── auth-provider.tsx   # NextAuth session provider
 │   ├── mode-toggle.tsx     # Theme switcher
 │   └── theme-provider.tsx  # Theme provider
 ├── lib/
+│   ├── auth.ts             # NextAuth configuration
 │   ├── prisma.ts           # Prisma client instance
 │   └── utils.ts            # Utility functions
+├── types/
+│   └── next-auth.d.ts      # NextAuth type definitions
 ├── prisma/
 │   └── schema.prisma       # Database schema
 ├── public/                 # Static assets
@@ -123,9 +137,11 @@ aragon-task-management/
 ### Authentication Flow
 
 1. User visits the application
-2. Middleware checks authentication status
-3. Unauthenticated users are redirected to Clerk sign-in
-4. Authenticated users access the dashboard
+2. Middleware checks authentication status using NextAuth session
+3. Unauthenticated users are redirected to `/login`
+4. Users can sign up at `/signup` or sign in at `/login`
+5. After authentication, users access the dashboard
+6. Session is managed via JWT tokens stored in HTTP-only cookies
 
 ### Data Flow
 
@@ -146,10 +162,11 @@ PostgreSQL Database
 ### Key Implementation Details
 
 1. **Type Safety**: tRPC provides end-to-end type safety from database to frontend
-2. **Context**: tRPC context includes authenticated user ID from Clerk
+2. **Context**: tRPC context includes authenticated user ID from NextAuth session
 3. **Protected Procedures**: All task operations require authentication
 4. **User Isolation**: Tasks are scoped to the authenticated user via `ownerId`
 5. **Optimistic Updates**: React Query enables instant UI feedback
+6. **Password Security**: Passwords are hashed using bcrypt before storage
 
 ## 🚀 Getting Started
 
@@ -157,7 +174,6 @@ PostgreSQL Database
 
 - **Node.js** 18+ or **Bun** 1.0+
 - **PostgreSQL** database (local or cloud)
-- **Clerk** account (free tier available)
 
 ### Installation
 
@@ -210,20 +226,24 @@ PostgreSQL Database
 Create a `.env` file in the root directory with the following variables:
 
 ```env
-# Clerk Authentication
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
-CLERK_SECRET_KEY=sk_test_...
+# NextAuth Secret - Used for encrypting JWT tokens and sessions
+# Generate with: openssl rand -base64 32
+NEXTAUTH_SECRET=your-secret-key-here
 
 # Database
 DATABASE_URL="postgresql://user:password@localhost:5432/aragon_task_management?schema=public"
 ```
 
-### Getting Clerk Keys
+### Generating NEXTAUTH_SECRET
 
-1. Sign up at [clerk.com](https://clerk.com)
-2. Create a new application
-3. Copy your publishable key and secret key from the dashboard
-4. Add them to your `.env` file
+1. **Generate a secure secret** using OpenSSL:
+   ```bash
+   openssl rand -base64 32
+   ```
+
+2. **Copy the generated string** and add it to your `.env` file as `NEXTAUTH_SECRET`
+
+3. **Important**: Never commit your `.env` file to version control. The secret should be kept secure and different for each environment (development, staging, production).
 
 ### Database URL Format
 
@@ -259,16 +279,32 @@ DATABASE_URL="postgresql://postgres:password@localhost:5432/aragon_task_manageme
 
 ### Database Schema
 
-The application uses a simple schema:
+The application uses the following schema:
 
 ```prisma
-model Task {
+model User {
   id        String   @id @default(cuid())
-  title     String
-  ownerId   String   // Clerk user ID
+  email     String   @unique
+  password  String   // hashed password
+  name      String?
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  
+  tasks     Task[]
+  
+  @@index([email])
+}
+
+model Task {
+  id        String   @id @default(cuid())
+  title     String
+  ownerId   String
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  owner     User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   
   @@index([ownerId])
 }
@@ -353,6 +389,15 @@ trpc.tasks.delete.useMutation({
 ### Type Definitions
 
 ```typescript
+type User = {
+  id: string;
+  email: string;
+  password: string; // hashed
+  name: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 type Task = {
   id: string;
   title: string;
@@ -379,10 +424,13 @@ All components are fully customizable and accessible.
 ## 🔒 Security
 
 - **Authentication**: All routes under `/dashboard` are protected
+- **Password Security**: Passwords are hashed using bcrypt (10 rounds) before storage
+- **Session Management**: JWT tokens stored in HTTP-only cookies
 - **User Isolation**: Tasks are scoped to the authenticated user
 - **Input Validation**: Zod schemas validate all inputs
 - **Type Safety**: TypeScript and tRPC ensure type safety
 - **Environment Variables**: Sensitive data stored in `.env`
+- **Middleware Protection**: Route protection via Next.js middleware
 
 ## 🚀 Deployment
 
@@ -421,7 +469,7 @@ Created as part of an assignment demonstrating full-stack development with moder
 
 - [Next.js](https://nextjs.org/) - React framework
 - [tRPC](https://trpc.io/) - End-to-end typesafe APIs
-- [Clerk](https://clerk.com/) - Authentication
+- [NextAuth.js](https://next-auth.js.org/) - Authentication
 - [Prisma](https://www.prisma.io/) - Database ORM
 - [shadcn/ui](https://ui.shadcn.com/) - UI components
 - [Tailwind CSS](https://tailwindcss.com/) - Styling

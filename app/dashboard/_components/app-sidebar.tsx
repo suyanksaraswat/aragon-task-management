@@ -1,7 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { LayoutDashboard, Layers, Plus } from "lucide-react";
+import { LayoutDashboard, Layers } from "lucide-react";
+import { useSession } from "next-auth/react";
 
 import { NavMain } from "./nav-main";
 import { NavUser } from "./nav-user";
@@ -11,10 +12,8 @@ import {
   SidebarFooter,
   SidebarHeader,
   SidebarMenu,
-  SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { useUser } from "@clerk/nextjs";
 import { ModeToggle } from "@/components/mode-toggle";
 
 const data = {
@@ -38,7 +37,7 @@ const data = {
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { isLoaded, user } = useUser();
+  const { data: session, status } = useSession();
 
   return (
     <Sidebar collapsible="offcanvas" {...props}>
@@ -61,11 +60,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarFooter>
         <ModeToggle />
 
-        {isLoaded ? (
+        {status === "authenticated" && session?.user ? (
           <NavUser
             user={{
-              name: user?.fullName || "Unknown",
-              email: user?.primaryEmailAddress?.emailAddress || "Unknown",
+              name: session.user.name || "Unknown",
+              email: session.user.email || "Unknown",
               avatar: "",
             }}
           />
